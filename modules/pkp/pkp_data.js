@@ -613,9 +613,14 @@ const PkpDataService = {
           try { localStorage.setItem('transkep_master_kinerja_cache', JSON.stringify(firestoreList)); } catch(e) {}
           return firestoreList;
         } else {
-          // Auto-seed default templates ke Firestore jika koleksi masih kosong
-          console.log("🌱 [PKP] Koleksi master_kinerja Firestore kosong, melakukan auto-seed default templates...");
-          this.seedDefaultMasterKinerja().catch(e => console.warn(e));
+          // Auto-seed default templates hanya jika user terautentikasi sebagai Admin/Operator
+          const isAuthedAdmin = !!(TranskepFirebase._authReady &&
+            typeof TranskepFirebase.getCallerIdentity === 'function' &&
+            TranskepFirebase.getCallerIdentity().isAdmin);
+          if (isAuthedAdmin) {
+            console.log("🌱 [PKP] Koleksi master_kinerja Firestore kosong, melakukan auto-seed default templates...");
+            this.seedDefaultMasterKinerja().catch(e => console.warn(e));
+          }
           return this.DEFAULT_MASTER_TEMPLATES;
         }
       } catch (err) {

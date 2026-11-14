@@ -128,6 +128,33 @@ const TranskepFirebase = {
       }
     };
   },
+  _hasStoredSession() {
+    try {
+      if (typeof localStorage === 'undefined') return false;
+      return !!(localStorage.getItem('transkep_active_nip') && localStorage.getItem('transkep_session_token'));
+    } catch (e) {
+      return false;
+    }
+  },
+  async _ensureAuthForRead(requireAdmin) {
+    if (!this._authResolved) {
+      if (!this._hasStoredSession()) return false;
+      await new Promise((resolve) => {
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve();
+        };
+        const timer = setTimeout(finish, 8000);
+        this._authPendingQueue.push(finish);
+      });
+    }
+    if (!this._authReady) return false;
+    if (requireAdmin && !this.getCallerIdentity().isAdmin) return false;
+    return true;
+  },
   async _queryMultiFieldParticipant(collectionName, keyField, fields, nip, extraFilters) {
     const db = this.getDb();
     if (!db || !nip) return [];
@@ -311,7 +338,7 @@ const TranskepFirebase = {
    */
   async getFirestoreSks() {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !(await this._ensureAuthForRead(false))) return [];
     const snapshot = await db.collection(this.SK_COLLECTION).get();
     const list = [];
     snapshot.forEach(doc => {
@@ -480,7 +507,7 @@ const TranskepFirebase = {
    */
   async getFirestoreJobdes() {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !(await this._ensureAuthForRead(false))) return [];
     const snapshot = await db.collection(this.JOBDES_COLLECTION).get();
     const list = [];
     snapshot.forEach(doc => {
@@ -635,7 +662,7 @@ const TranskepFirebase = {
    */
   async getFirestoreSops() {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !(await this._ensureAuthForRead(false))) return [];
     const snapshot = await db.collection(this.SOP_COLLECTION).get();
     const list = [];
     snapshot.forEach(doc => {
@@ -737,7 +764,7 @@ const TranskepFirebase = {
    */
   async getFirestoreMasterKinerja() {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !(await this._ensureAuthForRead(false))) return [];
     const snapshot = await db.collection(this.MASTER_KINERJA_COLLECTION).get();
     const list = [];
     snapshot.forEach(doc => list.push(doc.data()));
@@ -794,7 +821,7 @@ const TranskepFirebase = {
    */
   async getFirestorePkps(filterNip, filterTahun) {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !(await this._ensureAuthForRead(false))) return [];
     const caller = this.getCallerIdentity();
     if (!caller.isAdmin) {
       if (!caller.nip) return [];
@@ -903,7 +930,7 @@ const TranskepFirebase = {
    */
   async getFirestorePcks(filterNip, filterTahun, filterBulan) {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !(await this._ensureAuthForRead(false))) return [];
     const caller = this.getCallerIdentity();
     if (!caller.isAdmin) {
       if (!caller.nip) return [];
@@ -997,6 +1024,9 @@ const TranskepFirebase = {
   async getFirestoreRekapitulasi(tahun, bulan) {
     const db = this.getDb();
     if (!db) return null;
+    if (!(await this._ensureAuthForRead(true))) {
+      return (tahun && bulan) ? null : [];
+    }
 
     if (tahun && bulan) {
       const docId = 'REKAP_' + String(tahun).trim() + '_' + String(bulan).trim();
@@ -1116,7 +1146,7 @@ const TranskepFirebase = {
    */
   async getFirestoreKgbs() {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !(await this._ensureAuthForRead(true))) return [];
     const snapshot = await db.collection(this.EOFFICE_KGB_COLLECTION).get();
     const list = [];
     snapshot.forEach(doc => {
@@ -1211,7 +1241,7 @@ const TranskepFirebase = {
    */
   async getFirestoreRapats() {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !(await this._ensureAuthForRead(true))) return [];
     const snapshot = await db.collection(this.EOFFICE_RAPAT_COLLECTION).get();
     const list = [];
     snapshot.forEach(doc => {
@@ -1309,7 +1339,7 @@ const TranskepFirebase = {
    */
   async getFirestoreSuratTugas() {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !(await this._ensureAuthForRead(false))) return [];
     const snapshot = await db.collection(this.SURAT_TUGAS_COLLECTION).get();
     const list = [];
     snapshot.forEach(doc => {
