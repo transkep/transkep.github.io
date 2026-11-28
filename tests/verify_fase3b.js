@@ -3627,6 +3627,13 @@ vm.runInContext(fs.readFileSync('modules/pdf_viewer/pdf_viewer.js', 'utf8'), bro
       seal: true
     });
     assert.strictEqual(recheckSig158.skippedExistingSig, true, 'PDF yang sudah bertanda tangan digital harus dilewati agar TTE asli tidak rusak');
+    const flattenOnlyRes158 = await signerCtx158.TranskepPdfSigner.protectAndSealPdf(plainPdfBytes, {
+      flatten: false,
+      seal: false,
+      noSk: '054/KPA/2026'
+    });
+    assert.strictEqual(flattenOnlyRes158.signed, false, 'Mode kunci anti-edit tanpa TTE Admin IT tidak boleh menyuntikkan signature PKCS#7');
+    assert.ok(!Buffer.from(flattenOnlyRes158.bytes).toString('latin1').includes('/Type /Sig'), 'Mode seal:false wajib bebas /Type /Sig agar tidak muncul warning kuning Adobe Reader');
 
     // 4. Uji Mode Modal Daftarkan SK Baru vs Ubah Data SK & PWA Assets
     const skModalCtx158 = vm.createContext({
@@ -3756,6 +3763,7 @@ vm.runInContext(fs.readFileSync('modules/pdf_viewer/pdf_viewer.js', 'utf8'), bro
     assert.ok(viewSk158.includes('skProtectAntiEdit'));
     assert.ok(viewSk158.includes('skUnmatchedMembers'));
     assert.ok(viewSk158.includes('skPendingEditMembers'));
+    assert.ok(fs.readFileSync(path.join(repoRoot158, 'core/core.js'), 'utf8').includes("const isInfo = type === 'info';"), 'showNotify wajib mendukung tipe info biru agar proses kunci PDF tidak muncul silang merah');
     console.log('[PASS] Tahap 158 Smart Drop PDF/Word Auto-Fill, Anti-Edit Seal & SK Form Modes verified.');
 
     // =========================================================================
@@ -3767,14 +3775,14 @@ vm.runInContext(fs.readFileSync('modules/pdf_viewer/pdf_viewer.js', 'utf8'), bro
       'TANGGAL PEMBUATAN : 02 Maret 2018',
       'TANGGAL REVISI : -',
       'TANGGAL EFEKTIF : 08 April 2026',
-      'NAMA SOP : PROSEDUR PELAYANAN INFORMASI PUBLIK'
+      'NAMA SOP : PROSEDUR PELAYANAN INFORMASI PUBLIK PADA PENGADILAN AGAMA INDRAMAYU'
     ].join('\n');
     const sopMeta159 = SkDocParser.extractCoreSopMetadata(sampleSopText, 'sop_info.pdf');
     assert.strictEqual(sopMeta159.nomor_sop, 'SOP/AP/01');
     assert.strictEqual(sopMeta159.tanggal_pembuatan, '2018-03-02');
     assert.strictEqual(sopMeta159.tanggal_revisi, '');
     assert.strictEqual(sopMeta159.tanggal_efektif, '2026-04-08');
-    assert.strictEqual(sopMeta159.judul_sop, 'SOP PROSEDUR PELAYANAN INFORMASI PUBLIK');
+    assert.strictEqual(sopMeta159.judul_sop, 'SOP Prosedur Pelayanan Informasi Publik');
 
     const sopUsers159 = [
       { nip: '198001012005011001', nama: 'Agus Salim, S.H.I.', jabatan: 'Sekretaris', role: 'User' },
@@ -3852,11 +3860,15 @@ vm.runInContext(fs.readFileSync('modules/pdf_viewer/pdf_viewer.js', 'utf8'), bro
       members: extractedSopActors159
     });
 
-    // Mode Add SOP -> kategori_pj wajib manual kosong & metadata+pelaksana terisi
+    // Mode Add SOP -> kategori_pj otomatis dari tab PJ aktif, kosong bila dari Semua SOP
+    vmSop159.currentSopFilter = 'PJ. Kesekretariatan';
     vmSop159.openModalSop('add');
-    assert.strictEqual(vmSop159.formSop.kategori_pj, '', 'Mode Daftarkan SOP Baru harus mengosongkan kategori_pj');
+    assert.strictEqual(vmSop159.formSop.kategori_pj, 'PJ. Kesekretariatan', 'Tab PJ. Kesekretariatan wajib mengisi kategori_pj SOP otomatis');
+    vmSop159.currentSopFilter = 'Semua SOP';
+    vmSop159.openModalSop('add');
+    assert.strictEqual(vmSop159.formSop.kategori_pj, '', 'Tab Semua SOP harus mengosongkan kategori_pj agar dipilih manual');
     await vmSop159.processSopFiles([fakePdfFile]);
-    assert.strictEqual(vmSop159.formSop.judul_sop, 'SOP PROSEDUR PELAYANAN INFORMASI PUBLIK');
+    assert.strictEqual(vmSop159.formSop.judul_sop, 'SOP Prosedur Pelayanan Informasi Publik');
     assert.strictEqual(vmSop159.formSop.nomor_sop, 'SOP/AP/01');
     assert.strictEqual(vmSop159.formSop.tanggal_pembuatan, '2018-03-02');
     assert.strictEqual(vmSop159.formSop.tanggal_efektif, '2026-04-08');
@@ -3901,8 +3913,8 @@ vm.runInContext(fs.readFileSync('modules/pdf_viewer/pdf_viewer.js', 'utf8'), bro
     const core160 = fs.readFileSync(path.join(repoRoot158, 'core/core.js'), 'utf8');
     const pegawaiJs160 = fs.readFileSync(path.join(repoRoot158, 'modules/pegawai/pegawai.js'), 'utf8');
     const firebaseJs160 = fs.readFileSync(path.join(repoRoot158, 'core/firebase.js'), 'utf8');
-    assert.ok(idxHtml158.includes("APP_BUILD_VER = '3.9.10'"));
-    assert.ok(swJs158.includes("CACHE_NAME = 'transkep-v3.9.10'"));
+    assert.ok(idxHtml158.includes("APP_BUILD_VER = '3.9.11'"));
+    assert.ok(swJs158.includes("CACHE_NAME = 'transkep-v3.9.11'"));
     assert.ok(core160.includes('w-[80px] h-[102px] md:w-[88px] md:h-[112px]'), 'Header profil harus memakai bingkai pasfoto seimbang 88x112');
     assert.ok(core160.includes('rounded-[10px]') && core160.includes('p-[2px]'), 'Foto profil harus memiliki inner mat frame netral tanpa neon glow ungu');
     assert.ok(pegawaiJs160.includes('const targetW = 240;') && pegawaiJs160.includes('const targetH = 328;'), 'Kompresor avatar harus menyimpan pasfoto vertikal 240x328');

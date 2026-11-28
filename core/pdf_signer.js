@@ -1446,7 +1446,7 @@ ${absXrefOffset}
         try {
           const footerFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
           const cleanNoSk = String(options.noSk || '-').replace(/[^\x20-\x7E]/g, ' ').trim();
-          const sealLine = `Diarsipkan & disegel digital oleh TRANSKEP PA Indramayu | No. SK: ${cleanNoSk}`;
+          const sealLine = (wantSeal ? 'Diarsipkan & disegel digital' : 'Diarsipkan anti-edit') + ` oleh TRANSKEP PA Indramayu | No.: ${cleanNoSk}`;
           lastPage.drawText(sealLine.slice(0, 110), {
             x: 24,
             y: 8,

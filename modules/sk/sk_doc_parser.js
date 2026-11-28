@@ -1073,7 +1073,12 @@
     let nomorSop = '';
     const mNomor = normPlain.match(/(?:NOMOR\s+SOP|NO\.?\s*SOP)\s*[:\t]*([^\n\r]+)/i);
     if (mNomor && mNomor[1]) {
-      const cand = cleanVal(mNomor[1]).replace(/\s+(?:TANGGAL\s+PEMBUATAN|TANGGAL\s+REVISI|TANGGAL\s+EFEKTIF).*$/i, '').trim();
+      const cand = cleanVal(mNomor[1])
+        .replace(/\s+(?:TANGGAL\s+PEMBUATAN|TANGGAL\s+REVISI|TANGGAL\s+EFEKTIF).*$/i, '')
+        .replace(/\b(19|20)\s+(\d{2})\b/g, '$1$2')
+        .replace(/\s*\/\s*/g, '/')
+        .replace(/\s*-\s*/g, '-')
+        .trim();
       if (cand && cand !== '-' && !/^\.{3,}$/.test(cand)) {
         nomorSop = cand;
       }
@@ -1083,26 +1088,20 @@
       if (mCode) nomorSop = mCode[1].trim();
     }
 
-    let tanggalPembuatan = '';
-    const mBuat = normPlain.match(/TANGGAL\s+PEMBUATAN\s*[:\t]*([^\n\r]+)/i);
-    if (mBuat && mBuat[1]) {
-      tanggalPembuatan = parseIndoDateToIso(cleanVal(mBuat[1]));
-    }
+    const extractSopDateField = (labelRx) => {
+      const idx = normPlain.search(labelRx);
+      if (idx === -1) return '';
+      const mHead = normPlain.slice(idx).match(labelRx);
+      const after = normPlain.slice(idx + (mHead ? mHead[0].length : 0), idx + 120)
+        .split(/(?:TANGGAL\s+PEMBUATAN|TANGGAL\s+REVISI|TANGGAL\s+EFEKTIF|DISAHKAN\s+OLEH|NOMOR\s+SOP)/i)[0] || '';
+      const single = after.replace(/^[:\t\s]+/, '').split(/\t/)[0].replace(/[\r\n]+/g, ' ').trim();
+      if (!single || /^-$/.test(single)) return '';
+      return parseIndoDateToIso(single);
+    };
 
-    let tanggalRevisi = '';
-    const mRev = normPlain.match(/TANGGAL\s+REVISI\s*[:\t]*([^\n\r]+)/i);
-    if (mRev && mRev[1]) {
-      const valRev = cleanVal(mRev[1]);
-      if (valRev && valRev !== '-') {
-        tanggalRevisi = parseIndoDateToIso(valRev);
-      }
-    }
-
-    let tanggalEfektif = '';
-    const mEfektif = normPlain.match(/TANGGAL\s+EFEKTIF\s*[:\t]*([^\n\r]+)/i);
-    if (mEfektif && mEfektif[1]) {
-      tanggalEfektif = parseIndoDateToIso(cleanVal(mEfektif[1]));
-    }
+    const tanggalPembuatan = extractSopDateField(/TANGGAL\s+PEMBUATAN\s*[:\t]*/i);
+    const tanggalRevisi = extractSopDateField(/TANGGAL\s+REVISI\s*[:\t]*/i);
+    const tanggalEfektif = extractSopDateField(/TANGGAL\s+EFEKTIF\s*[:\t]*/i);
 
     let judulSop = '';
     const mNama = normPlain.match(/(?:NAMA\s+SOP|JUDUL\s+(?:DOKUMEN\s+)?SOP)\s*[:\t]*\n?([^\n\r]+(?:\n(?!(?:DASAR|KUALIFIKASI|KETERKAITAN|PERALATAN|PERINGATAN|PENCATATAN|NOMOR|TANGGAL|DISAHKAN)\b)[^\n\r]+)?)/i);
@@ -1117,15 +1116,16 @@
         .replace(/\s+/g, ' ')
         .trim();
       if (candJudul && candJudul !== '-' && candJudul.length >= 4) {
-        judulSop = /^sop\b/i.test(candJudul) ? candJudul : ('SOP ' + candJudul);
+        const withPrefix = /^sop\b/i.test(candJudul) ? candJudul : ('SOP ' + candJudul);
+        judulSop = formatCleanSkTitle(withPrefix);
       }
     }
     if (!judulSop) {
       const mLineSop = normPlain.match(/(?:^|\n)\s*((?:SOP|STANDAR\s+OPERASIONAL\s+PROSEDUR)\s+[A-Z0-9][^\n\r]{4,120})/i);
       if (mLineSop && mLineSop[1] && !/^(?:NOMOR\s+SOP)/i.test(mLineSop[1].trim())) {
-        judulSop = mLineSop[1].replace(/\s+/g, ' ').trim();
+        judulSop = formatCleanSkTitle(mLineSop[1]);
       } else if (fileName) {
-        judulSop = String(fileName).replace(/\.(pdf|docx?)$/i, '').replace(/[_]+/g, ' ').trim();
+        judulSop = formatCleanSkTitle(String(fileName).replace(/[_]+/g, ' '));
       }
     }
 

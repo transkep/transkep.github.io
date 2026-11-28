@@ -660,11 +660,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (finalBase64 && this.skFileRawBytes && this.skProtectAntiEdit && !this.skHasEmbeddedSig) {
                         if (window.TranskepPdfSigner && typeof window.TranskepPdfSigner.protectAndSealPdf === 'function' && window.TranskepPdfSigner.isReady()) {
                             if (window.showNotify) {
-                                window.showNotify("Mengunci & Menyegel PDF...", "Sedang mem-flatten halaman & membubuhkan segel PKCS#7 anti-edit sebelum unggah ke Drive...", "info");
+                                window.showNotify("Mengunci PDF Anti-Edit...", "Sedang menyatukan halaman menjadi gambar HD anti-edit sebelum unggah ke Drive...", "info");
                             }
                             const protectedRes = await window.TranskepPdfSigner.protectAndSealPdf(this.skFileRawBytes, {
                                 flatten: true,
-                                seal: true,
+                                seal: false,
                                 signerUser: (this.globalState && this.globalState.user) ? this.globalState.user : null,
                                 noSk: this.formSk.no_sk,
                                 judulSk: this.formSk.judul_sk

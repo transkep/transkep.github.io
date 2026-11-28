@@ -293,7 +293,7 @@
                            class="mt-0.5 w-4 h-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500 disabled:opacity-50">
                     <div class="min-w-0">
                       <div class="font-bold text-slate-200 text-xs flex items-center gap-2 flex-wrap">
-                        <span>Kunci PDF Anti-Edit (Flatten Halaman + Segel PKCS#7 TRANSKEP)</span>
+                        <span>Kunci PDF Anti-Edit (Flatten Halaman HD)</span>
                         <span v-if="skHasEmbeddedSig" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px]">
                           TTE Bawaan Terdeteksi — Dipertahankan Asli
                         </span>
@@ -301,7 +301,7 @@
                       <div class="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
                         {{ skHasEmbeddedSig
                           ? 'File PDF ini sudah memiliki tanda tangan digital resmi/bawaan, sehingga tidak dimodifikasi agar segel aslinya tetap sah.'
-                          : 'Menyatukan teks, TTD, dan stempel basah ke gambar halaman HD lalu membubuhkan segel kriptografis PKCS#7 sebelum diunggah ke Drive & Flipbook.' }}
+                          : 'Menyatukan teks, TTD, dan stempel basah ke gambar halaman HD sehingga tidak dapat diedit teksnya sebelum diunggah ke Drive & Flipbook (tanpa TTE Admin IT).' }}
                       </div>
                     </div>
                   </label>

@@ -303,8 +303,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (this.$refs.sopFileInput) this.$refs.sopFileInput.value = '';
 
                 if (mode === 'add') {
+                    const defaultKategoriFromTab = ['PJ. Manajemen', 'PJ. Kepaniteraan', 'PJ. Kesekretariatan'].includes(this.currentSopFilter)
+                        ? this.currentSopFilter
+                        : '';
                     this.formSop = {
-                        id: '', judul_sop: '', kategori_pj: '',
+                        id: '', judul_sop: '', kategori_pj: defaultKategoriFromTab,
                         nomor_sop: '', tanggal_pembuatan: '', tanggal_revisi: '',
                         tanggal_efektif: '', link_drive: ''
                     };
@@ -450,7 +453,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                 tone: splitRes.unmatched.length > 0 ? 'warning' : 'success',
                                 title: `Auto-Fill SOP Selesai dari ${sourceLabel}`,
                                 detail: (this.modalSopMode === 'add'
-                                          ? 'Judul, Nomor SOP, Tanggal & Pelaksana terisi otomatis (Kategori PJ pilih manual). '
+                                          ? (this.formSop.kategori_pj
+                                              ? 'Judul, Nomor SOP, Tanggal, Kategori PJ & Pelaksana terisi otomatis. '
+                                              : 'Judul, Nomor SOP, Tanggal & Pelaksana terisi otomatis (Kategori PJ pilih manual). ')
                                           : 'Judul, Nomor, Tanggal & Kategori PJ lama dipertahankan. ') +
                                         `Cocok: ${splitRes.matched.length} pelaksana` +
                                         (splitRes.unmatched.length > 0 ? `, Perlu dicek Admin: ${splitRes.unmatched.length} baris.` : '.')
@@ -571,11 +576,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (finalBase64 && this.sopFileRawBytes && this.sopProtectAntiEdit && !this.sopHasEmbeddedSig) {
                         if (window.TranskepPdfSigner && typeof window.TranskepPdfSigner.protectAndSealPdf === 'function' && window.TranskepPdfSigner.isReady()) {
                             if (window.showNotify) {
-                                window.showNotify("Mengunci & Menyegel PDF SOP...", "Sedang mem-flatten halaman & membubuhkan segel PKCS#7 anti-edit sebelum unggah ke Drive...", "info");
+                                window.showNotify("Mengunci PDF Anti-Edit SOP...", "Sedang menyatukan halaman menjadi gambar HD anti-edit sebelum unggah ke Drive...", "info");
                             }
                             const protectedRes = await window.TranskepPdfSigner.protectAndSealPdf(this.sopFileRawBytes, {
                                 flatten: true,
-                                seal: true,
+                                seal: false,
                                 signerUser: (this.globalState && this.globalState.user) ? this.globalState.user : null,
                                 noSk: this.formSop.nomor_sop,
                                 judulSk: this.formSop.judul_sop

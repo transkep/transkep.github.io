@@ -2289,6 +2289,7 @@ function showNotify(title, message, type = 'success') {
   const toast = document.createElement('div');
   const isSuccess = type === 'success';
   const isWarning = type === 'warning';
+  const isInfo = type === 'info';
 
   let borderColor = isSuccess ? 'border-emerald-500/30' : 'border-rose-500/30';
   let iconColor = isSuccess ? 'text-emerald-400' : 'text-rose-400';
@@ -2300,6 +2301,11 @@ function showNotify(title, message, type = 'success') {
     iconColor = 'text-amber-400';
     iconClass = 'fa-triangle-exclamation';
     bgColor = 'bg-amber-500/10';
+  } else if (isInfo) {
+    borderColor = 'border-sky-500/30';
+    iconColor = 'text-sky-400';
+    iconClass = 'fa-circle-info';
+    bgColor = 'bg-sky-500/10';
   }
 
   toast.className = `glass p-4 rounded-2xl border ${borderColor} bg-slate-900/90 shadow-2xl flex items-start gap-3 w-80 transform transition-all duration-300 translate-x-full opacity-0 pointer-events-auto`;
